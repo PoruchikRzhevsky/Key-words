@@ -1,0 +1,196 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}	
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{times}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{blindtext}
+\usepackage{hyperref}
+
+\usepackage{pgfplotstable} 
+\usepackage{booktabs}
+
+\graphicspath{ {./images/} }
+
+\usepackage[czech]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{url}
+\usepackage{indentfirst}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{tabularx}
+\usepackage{rotating}
+\usepackage{tikz}
+\usepackage[labelformat=parens,labelsep=quad,skip=3pt]{caption}
+
+\usepackage{color}  
+\usepackage{listings}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize\centering,        
+    breaklines=true,                 
+    captionpos=b,                                  
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,              
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+
+\widowpenalty 10000 \clubpenalty 10000 \displaywidowpenalty 10000
+\setcounter{topnumber}{3}	  
+\setcounter{bottomnumber}{3}	 
+\setcounter{totalnumber}{6}	  
+\renewcommand\topfraction{0.9}	 
+\renewcommand\bottomfraction{0.9} 
+\renewcommand\textfraction{0.1}	  
+\intextsep=8mm \textfloatsep=8mm 
+
+\renewcommand{\thesection}{\arabic{section}.}
+\renewcommand{\thesubsection}{\thesection\arabic{subsection}.}
+\makeatletter \def\@seccntformat#1{\csname the#1\endcsname\hspace{1ex}} \makeatother
+
+\begin{document}
+
+\hline
+\begin{center}
+\bigskip
+\huge Skript pro extrakci klíčových slov
+\vspace{0.5cm}
+\par \large Artem Gorodilov
+\vspace{0.5cm}
+\bigskip
+\end{center}
+\hline
+\bigskip
+
+
+\vskip10pt
+\begin{minipage}[t]{0.5\textwidth} 
+        \section{Abstrakt}    
+            Skript přijímá text v kódování UTF-8 jako standardní vstup a jako standardní výstup poskytuje textový soubor s klíčovými slovy seřazenými podle důležitosti (četnost výskytu v textu a celkový počet výskytů).
+        \section{Popis skriptu}
+            Skript je napsán v jazyce Perl v5.34.0 \cite{perl} (funguje i v novějších verzích).
+            \par Skript je rozdělen do několika částí: 
+            \begin{enumerate}
+                \item Import požadovaných modulů, nastavení kódování UTF-8 a definování oddělovače writerů.
+                \item Načtení souboru ze standardního vstupu, převod textu na seznam slov a změna velikosti všech slov na malá písmena.
+                \item Import datového souboru se stop slovy, filtrování seznamu slov od stop slov a čísel.
+                \item Výpočet četnosti výskytu jednotlivých filtrovaných klíčových slov v textu, seřazení klíčových slov podle četnosti výskytu a seřazení podle celkového počtu výskytů v textu.
+                \item Výstup seznamu klíčových slov.
+            \end{enumerate}
+        
+            \subsection{Nastavení skriptů}
+                Nastavení skriptu je v kódu definováno následujícími řádky:
+                \begin{lstlisting}[language=Perl]
+                    use strict;
+                    use warnings;
+
+                    use open qw(:std :utf8);
+                \end{lstlisting}
+                Skript používá moduly strict a warnings k zajištění správné činnosti skriptu a k zobrazení varování v případě chyb. Modul open slouží k nastavení kódování vstupních a výstupních souborů na UTF-8.
+    \end{minipage}
+    \hspace{10pt}
+    \begin{minipage}[t]{0.5\textwidth} 
+            \subsection{Čtení souboru}
+                Skript načte text ze standardního vstupu a převede jej na seznam slov \cite{filter}. Vstupní text je umístěn ve složce $input/$.
+                \par Text je rozdělen na slova pomocí mezer, interpunkčních znamének a zalomení řádků. Velká písmena všech slov jsou změněna na malá.
+                \begin{lstlisting}[language=Perl]
+                    my $text = <STDIN>;
+
+                    my @words = $text =~ /(\w+)/g;
+
+                    foreach my $word (@words) {
+                        $word = lc $word;
+                    }
+                \end{lstlisting}    
+                
+            \subsection{Filtrování stop slov a čísel}
+                Skript načte stop slova z datového souboru \cite{stopwords} a odfiltruje seznam slov od stop slov a čísel.
+                \begin{lstlisting}[language=Perl]
+                    my @stopwords;
+                    open my $stopwords_file, '<', 'stopwords-cs.txt' or die "Cannot open stopwords-cs.txt: $!";
+
+                    @stopwords = split(/\s+/, <$stopwords_file>);
+                    my %stopwords_hash = map { $_ => 1 } @stopwords;
+
+                    my @filt_words = grep { !$stopwords_hash{$_} && !/\d/ } @words;
+                \end{lstlisting}
+
+            \subsection{Výpočet četnosti výskytu a třídění}
+                Skript vypočítá četnost výskytu každého filtrovaného klíčového slova v textu a seřadí klíčová slova podle četnosti výskytu \cite{sorting} a podle celkového počtu výskytů v textu. 
+                
+    \end{minipage}
+    \newpage
+    \begin{minipage}[t]{0.5\textwidth}
+            \par Prahová hodnota pro počet výskytů klíčového slova v defind podle argumentu uvedeného v inicializačním řádku kódu \cite{arg} (vysvětleno v kapitole "3. Dokumentace").
+            \begin{lstlisting}[language=Perl]
+                my %word_counter;
+                foreach my $word (@filt_words) {
+                    $word_counter{$word}++;
+                }
+
+                my @sorted_words = sort { $word_counter{$b} <=> $word_counter{$a} } keys %word_counter;
+
+                my $frequency_threshold = $ARGV[0]; 
+
+                my @keywords = grep { $word_counter{$_} > $frequency_threshold } @sorted_words;
+            \end{lstlisting} 
+            \subsection{Výstup seznamu klíčových slov}
+                Skript vypíše seznam klíčových slov na standardní výstup. Klíčová slova jsou uvedena ve formě seznamu, přičemž každé klíčové slovo je na samostatném řádku.
+                \begin{lstlisting}[language=Perl]
+                    foreach my $keyword (@keywords) {
+                        print "$keyword\n";
+                    }
+                \end{lstlisting}
+    \end{minipage}
+    \hspace{10pt}
+    \begin{minipage}[t]{0.5\textwidth} 
+        \section{Dokumentace}
+            Skript se spouští z příkazového řádku následujícím příkazem:
+
+            \begin{center}
+                \texttt{perl klicova\_slova.pl 10 < input/text.txt > output/keywords.txt}
+            \end{center}
+            Skript přijímá jeden argument - prahovou hodnotu pro počet výskytů klíčového slova v textu. Tento počet závisí na velikosti textu. Pokud je text velký, měla by být prahová hodnota nastavena na vyšší hodnotu. Pokud je text malý, měla by být prahová hodnota nastavena na nižší hodnotu.
+            \par Skript načte text ze složky $input/$ a zapíše seznam klíčových slov do složky $output/$.
+
+        \section{Diskuse}
+            Skript funguje správně a poskytuje očekávaný výsledek. Nicméně jasnost klíčových slov závisí především na údajích o stopwords. Uživatel může do datového souboru napsat vhodnější stopslova pro konkrétní text nebo najít jiný zdroj stopslov.
+    \end{minipage}
+    \vspace{10pt}
+    \renewcommand{\refname}{Odkazy}
+    \begin{thebibliography}{9}
+        \bibitem{perl} 
+            Perl website. \url{www.perl.com/}
+        \bibitem{filter}
+            PerlScript to take certain words from text file. \url{https://stackoverflow.com/questions/66495616/perlscript-to-take-certain-words-from-text-file}
+        \bibitem{stopwords}
+            Stopwords ISO CZ. \url{https://github.com/stopwords-iso/stopwords-cs/blob/master/stopwords-cs.txt}
+        \bibitem{sorting}
+            How do I sort by frequency of a value? \url{https://stackoverflow.com/questions/4519979/how-do-i-sort-by-frequency-of-a-value}
+        \bibitem{arg}
+            How can I pass command-line arguments to a Perl program? \url{https://stackoverflow.com/questions/361752/how-can-i-pass-command-line-arguments-to-a-perl-program}
+    \end{thebibliography}
+\end{document}

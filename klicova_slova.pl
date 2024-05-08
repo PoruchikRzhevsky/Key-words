@@ -14,9 +14,6 @@ local $/ = undef;
 # Reading standart input
 my $text = <STDIN>;
 
-# Defining frequency treshold for keywords (https://stackoverflow.com/questions/361752/how-can-i-pass-command-line-arguments-to-a-perl-program)
-my $frequency_threshold = $ARGV[0]; 
-
 # Extract words from the text and store them in an array (https://stackoverflow.com/questions/66495616/perlscript-to-take-certain-words-from-text-file)
 my @words = $text =~ /(\w+)/g;
 
@@ -43,6 +40,9 @@ foreach my $word (@filt_words) {
 
 # Sorting the filtered keywords by their frequency of appearance in the text (https://stackoverflow.com/questions/4519979/how-do-i-sort-by-frequency-of-a-value)
 my @sorted_words = sort { $word_counter{$b} <=> $word_counter{$a} } keys %word_counter;
+
+# Defining frequency treshold for keywords (https://stackoverflow.com/questions/361752/how-can-i-pass-command-line-arguments-to-a-perl-program)
+my $frequency_threshold = $ARGV[0]; 
 
 # Additional filtering of the keywords by teir appearance more than N times (defined by $frequency_threshold) in the text (this number depends on the size of the text mainly)
 my @keywords = grep { $word_counter{$_} > $frequency_threshold } @sorted_words;
